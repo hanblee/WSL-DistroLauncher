@@ -17,17 +17,21 @@ bool DistributionInfo::CreateUser(std::wstring_view userName)
     }
 
     // Add the user account to any relevant groups.
-    commandLine = L"/usr/bin/usermod -aG adm,cdrom,sudo,dip,plugdev ";
+    commandLine = L"/usr/bin/usermod -G wheel ";
     commandLine += userName;
     hr = g_wslApi.WslLaunchInteractive(commandLine.c_str(), true, &exitCode);
     if ((FAILED(hr)) || (exitCode != 0)) {
-
-        // Delete the user if the group add command failed.
-        commandLine = L"/usr/bin/userdel ";
-        commandLine += userName;
-        g_wslApi.WslLaunchInteractive(commandLine.c_str(), true, &exitCode);
         return false;
     }
+
+    // Set user's password.
+    commandLine = L"/usr/bin/passwd ";
+    commandLine += userName;
+
+    do
+    {
+        hr = g_wslApi.WslLaunchInteractive(commandLine.c_str(), true, &exitCode);
+    } while (FAILED(hr) || exitCode != 0);
 
     return true;
 }
